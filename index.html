@@ -1,0 +1,2408 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>PT 회원 관리</title>
+<style>
+  :root{
+    --bg:#14161a;
+    --surface:#1c1f26;
+    --surface2:#242832;
+    --line:#2c303a;
+    --text:#edf0f4;
+    --muted:#8b93a3;
+    --mint:#5eead4;
+    --amber:#f2b866;
+    --coral:#ef7e6a;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Pretendard','Segoe UI',system-ui,-apple-system,sans-serif;
+    padding:24px 16px calc(60px + env(safe-area-inset-bottom));
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:640px;margin:0 auto;}
+  h1{
+    font-size:22px;
+    font-weight:800;
+    letter-spacing:-0.02em;
+    margin:0 0 4px;
+  }
+  h1 span{color:var(--mint);}
+  .subtitle{color:var(--muted);font-size:13px;margin-bottom:18px;}
+
+  .summary{
+    display:flex;
+    gap:8px;
+    margin-bottom:20px;
+    overflow-x:auto;
+  }
+  .chip{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px 14px;
+    flex-shrink:0;
+  }
+  .chip .n{font-size:17px;font-weight:800;display:block;}
+  .chip .l{font-size:11px;color:var(--muted);}
+
+  .form-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px;
+    margin-bottom:20px;
+  }
+  .form-card h2{
+    font-size:13px;
+    color:var(--muted);
+    margin:0 0 14px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  .field{margin-bottom:12px;}
+  .field label{
+    display:block;
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  .field .hint{color:#5f6675;font-size:11px;margin-top:4px;}
+  .field input{
+    width:100%;
+    background:var(--surface2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:13px 12px;
+    color:var(--text);
+    font-size:16px;
+  }
+  .field input:focus{outline:2px solid var(--mint);outline-offset:1px;}
+  button{font-family:inherit;cursor:pointer;border:none;}
+  .btn-primary{
+    width:100%;
+    background:var(--mint);
+    color:#0a1613;
+    font-weight:800;
+    padding:15px;
+    border-radius:12px;
+    font-size:16px;
+    margin-top:4px;
+  }
+  .btn-primary:active{transform:scale(0.98);}
+
+  .msg{
+    font-size:13px;
+    margin-top:10px;
+    padding:10px 12px;
+    border-radius:10px;
+    display:none;
+  }
+  .msg.show{display:block;}
+  .msg.error{background:#3a2320;color:var(--coral);}
+  .msg.info{background:#233a34;color:var(--mint);}
+
+  .members{display:flex;flex-direction:column;gap:12px;}
+  .member{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+  .member-main{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:16px;
+  }
+  .check-btn{
+    flex-shrink:0;
+    width:52px;
+    height:52px;
+    border-radius:50%;
+    background:var(--surface2);
+    border:2px solid var(--line);
+    color:var(--mint);
+    font-size:22px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:transform .1s;
+  }
+  .check-btn:active{transform:scale(0.9);}
+  .check-btn.done{
+    background:var(--line);
+    color:#3f4552;
+    border-color:var(--line);
+  }
+  .member-info{flex:1;min-width:0;}
+  .member-name{font-size:16px;font-weight:800;}
+  .member-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .member-sub b{color:var(--text);}
+  .progress-bar{
+    height:5px;
+    background:var(--surface2);
+    border-radius:4px;
+    overflow:hidden;
+    margin-top:8px;
+  }
+  .progress-fill{height:100%;background:var(--mint);}
+  .expand-btn{
+    flex-shrink:0;
+    color:var(--muted);
+    background:none;
+    font-size:20px;
+    padding:6px;
+  }
+
+  .member-detail{
+    display:none;
+    padding:0 16px 16px;
+    border-top:1px solid var(--line);
+  }
+  .member-detail.open{display:block;padding-top:14px;}
+  .stat-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px 14px;
+    margin-bottom:14px;
+  }
+  .stat label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px;}
+  .stat .val{font-size:15px;font-weight:700;}
+  .action-row{display:flex;gap:8px;flex-wrap:wrap;}
+
+  .subtab-nav{
+    display:flex;
+    gap:4px;
+    margin-bottom:14px;
+    overflow-x:auto;
+  }
+  .subtab-btn{
+    background:var(--surface2);
+    color:var(--muted);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:8px 12px;
+    font-size:13px;
+    flex-shrink:0;
+  }
+  .subtab-btn.active{background:var(--mint);color:#0a1613;border-color:var(--mint);font-weight:700;}
+
+  .record-form{
+    background:var(--surface2);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px;
+    margin-bottom:14px;
+  }
+  .record-form-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-bottom:10px;
+  }
+  .record-form input, .record-form select, .record-form textarea{
+    width:100%;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px;
+    color:var(--text);
+    font-size:14px;
+    font-family:inherit;
+  }
+  .record-form textarea{resize:vertical;min-height:60px;}
+  .record-form label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;}
+
+  .record-list{display:flex;flex-direction:column;gap:8px;}
+  .record-item{
+    background:var(--surface2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px;
+  }
+  .record-date{font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px;}
+  .record-metrics{display:flex;flex-wrap:wrap;gap:10px 16px;}
+  .metric{font-size:13px;}
+  .metric .mlabel{color:var(--muted);font-size:11px;display:block;}
+  .metric .mval{font-weight:700;}
+  .delta-up{color:var(--coral);}
+  .delta-down{color:var(--mint);}
+  .delta-flat{color:var(--muted);}
+  .record-text{font-size:14px;line-height:1.5;white-space:pre-wrap;}
+  .record-actions{display:flex;gap:6px;margin-top:8px;}
+  .badge{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    padding:2px 8px;
+    border-radius:6px;
+    background:var(--line);
+    color:var(--text);
+    margin-bottom:6px;
+  }
+  .badge.done{background:var(--mint);color:#0a1613;}
+  .empty-sub{color:var(--muted);font-size:13px;text-align:center;padding:20px;}
+  .restriction-banner{
+    background:#3a2320;
+    color:var(--coral);
+    border:1px solid #5a3530;
+    border-radius:10px;
+    padding:10px 12px;
+    font-size:13px;
+    margin-bottom:14px;
+    line-height:1.4;
+  }
+  .checkbox-list{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-top:8px;
+  }
+  .checkbox-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:14px;
+    color:var(--text);
+  }
+  .checkbox-row input{width:auto;}
+  .task-columns{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:16px;
+  }
+  @media (min-width:560px){
+    .task-columns{grid-template-columns:1fr 1fr;}
+  }
+  .task-col-title{
+    font-size:13px;
+    font-weight:800;
+    margin-bottom:10px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .task-col-count{
+    background:var(--surface2);
+    color:var(--muted);
+    border-radius:999px;
+    padding:1px 8px;
+    font-size:11px;
+    font-weight:700;
+  }
+
+  .sched-nav{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom:12px;
+  }
+  .sched-range{font-size:13px;font-weight:700;white-space:nowrap;}
+  .sched-legend{
+    display:flex;
+    gap:14px;
+    font-size:11px;
+    color:var(--muted);
+    margin-bottom:10px;
+  }
+  .sched-legend .dot{
+    display:inline-block;
+    width:9px;height:9px;
+    border-radius:3px;
+    margin-right:4px;
+    vertical-align:middle;
+  }
+  .sched-scroll{
+    overflow-x:auto;
+    overflow-y:auto;
+    max-height:70vh;
+    border:1px solid var(--line);
+    border-radius:12px;
+    margin-bottom:8px;
+  }
+  .sched-table{
+    border-collapse:collapse;
+    width:100%;
+  }
+  .sched-table th, .sched-table td{
+    border:1px solid var(--line);
+    text-align:center;
+    padding:0;
+  }
+  .sched-table thead th{
+    position:sticky;
+    top:0;
+    z-index:2;
+    background:var(--surface2);
+    color:var(--text);
+    font-size:11px;
+    font-weight:800;
+    padding:6px 4px;
+    min-width:44px;
+  }
+  .sched-corner{
+    left:0;
+    z-index:3;
+    min-width:38px;
+  }
+  .sched-daylabel{
+    min-width:44px;
+  }
+  .sched-hourlabel{
+    position:sticky;
+    left:0;
+    z-index:1;
+    background:var(--surface2);
+    color:var(--muted);
+    font-size:11px;
+    font-weight:700;
+    padding:0 6px;
+    min-width:38px;
+    white-space:nowrap;
+  }
+  .sched-date{font-size:9px;color:var(--muted);font-weight:400;}
+  .sched-cell{
+    height:38px;
+    min-width:44px;
+    background:var(--surface);
+    cursor:pointer;
+  }
+  .sched-cell.sched-scheduled{background:var(--surface2);}
+  .sched-cell.sched-done{background:#1f3d38;}
+  .sched-cell.sched-cancelled{background:#3a2320;}
+  .sched-cell.sched-selected{outline:2px solid var(--mint);outline-offset:-2px;}
+  .sched-name{font-size:10px;font-weight:700;word-break:break-all;line-height:1.2;display:block;padding:2px;}
+  .chart-block{margin-bottom:16px;}
+  .chart-block:last-child{margin-bottom:0;}
+  .chart-title{font-size:12px;color:var(--text);font-weight:700;margin-bottom:4px;}
+  .undo-toast{
+    background:var(--surface2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px 14px;
+    font-size:13px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:12px;
+  }
+  .pill-btn{
+    background:var(--surface2);
+    color:var(--muted);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:9px 13px;
+    font-size:13px;
+  }
+  .pill-btn.danger{color:var(--coral);}
+  .confirm-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    color:var(--coral);
+    flex-wrap:wrap;
+  }
+
+  .backup-row{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:16px;
+  }
+  .chip.sync-ok{color:var(--mint);}
+  .chip.sync-bad{color:var(--amber);}
+
+  .tabs{
+    display:flex;
+    gap:6px;
+    margin-bottom:18px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:4px;
+  }
+  .tab-btn{
+    flex:1;
+    background:none;
+    color:var(--muted);
+    padding:10px;
+    border-radius:9px;
+    font-size:14px;
+    font-weight:700;
+  }
+  .tab-btn.active{background:var(--surface2);color:var(--mint);}
+
+  .header-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:16px;
+  }
+  .menu-toggle{
+    flex-shrink:0;
+    width:38px;
+    height:38px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    color:var(--muted);
+    border-radius:10px;
+    font-size:18px;
+    line-height:1;
+  }
+  .menu-toggle:active{transform:scale(0.94);}
+  .dropdown-menu{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:6px;
+    margin-bottom:16px;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .dropdown-item{
+    background:none;
+    color:var(--muted);
+    text-align:left;
+    padding:12px 14px;
+    border-radius:9px;
+    font-size:14px;
+    font-weight:600;
+  }
+  .dropdown-item.active{background:var(--surface2);color:var(--mint);}
+
+  #view-coaching{padding-bottom:70px;}
+  .fab{
+    position:fixed;
+    right:20px;
+    bottom:calc(20px + env(safe-area-inset-bottom));
+    background:var(--mint);
+    color:#0a1613;
+    font-weight:800;
+    font-size:14px;
+    padding:14px 20px;
+    border-radius:999px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.4);
+    z-index:20;
+  }
+  .fab:active{transform:scale(0.96);}
+  .search-input{
+    width:100%;
+    background:var(--surface2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px 14px;
+    color:var(--text);
+    font-size:15px;
+    margin-bottom:14px;
+  }
+  .stat-block{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px;
+    margin-bottom:14px;
+  }
+  .stat-block h3{
+    font-size:13px;
+    color:var(--muted);
+    margin:0 0 12px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.03em;
+  }
+  .rank-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:10px 0;
+    border-bottom:1px solid var(--line);
+    font-size:14px;
+  }
+  .rank-row:last-child{border-bottom:none;}
+  .rank-row .rname{font-weight:700;}
+  .rank-row .rsub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .rank-row .rval{font-weight:800;text-align:right;}
+  .alert-row{color:var(--amber);}
+
+  .empty{
+    text-align:center;
+    color:var(--muted);
+    padding:50px 20px;
+    font-size:14px;
+    border:1px dashed var(--line);
+    border-radius:var(--radius);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header-row">
+    <div>
+      <h1>PT <span>코칭 기록</span></h1>
+      <div class="subtitle">회원을 눌러서 인바디·수업일지·식단을 기록해요</div>
+    </div>
+    <button class="menu-toggle" onclick="toggleMenu()">⋯</button>
+  </div>
+
+  <div class="dropdown-menu" id="dropdown-menu" style="display:none;">
+    <button class="dropdown-item" id="menu-coaching" onclick="switchView('coaching')">코칭 기록</button>
+    <button class="dropdown-item" id="menu-members" onclick="switchView('members')">회원 관리 (금액)</button>
+    <button class="dropdown-item" id="menu-stats" onclick="switchView('stats')">통계 (금액)</button>
+    <button class="dropdown-item" id="menu-schedule" onclick="switchView('schedule')">시간표</button>
+    <button class="dropdown-item" id="menu-programs" onclick="switchView('programs')">운동 프로그램</button>
+  </div>
+
+  <div class="msg error" id="storage-warn" style="display:none;margin-bottom:16px;">⚠️ 이 화면에서는 자동 저장이 지원되지 않아요. 창을 닫으면 입력한 내용이 사라져요.</div>
+
+  <div class="summary" id="summary"></div>
+
+  <div id="view-members">
+    <div class="backup-row">
+      <button class="pill-btn" onclick="toggleSettings()">☁️ 동기화 설정</button>
+      <button class="pill-btn" onclick="manualSync()">🔄 새로고침</button>
+      <button class="pill-btn" onclick="exportData()">📤 내보내기</button>
+      <button class="pill-btn" onclick="document.getElementById('import-file').click()">📥 불러오기</button>
+      <input type="file" id="import-file" accept=".json" style="display:none;" onchange="handleImportFile(event)">
+    </div>
+    <div class="msg" id="import-msg"></div>
+
+    <div class="form-card" id="settings-panel" style="display:none;">
+      <h2>아이폰 · 아이패드 동기화</h2>
+      <div class="field">
+        <label>Bin ID</label>
+        <input id="in-binid" type="text" placeholder="jsonbin.io에서 발급받은 Bin ID">
+      </div>
+      <div class="field">
+        <label>Master Key</label>
+        <input id="in-apikey" type="text" placeholder="jsonbin.io에서 발급받은 X-Master-Key">
+        <div class="hint">두 기기 모두 같은 Bin ID · Master Key를 입력하면 데이터가 공유돼요. jsonbin.io에서 무료로 발급받을 수 있어요.</div>
+      </div>
+      <button class="btn-primary" onclick="saveCloudConfig()">연결하기</button>
+      <div class="msg" id="settings-msg"></div>
+    </div>
+
+    <div class="form-card">
+      <h2>신규 회원 등록</h2>
+      <div class="field">
+        <label>이름</label>
+        <input id="in-name" type="text" placeholder="홍길동">
+      </div>
+      <div class="field">
+        <label>총 결제 금액 (원)</label>
+        <input id="in-amount" type="number" inputmode="numeric" placeholder="1200000">
+      </div>
+      <div class="field">
+        <label>총 세션 (등록 횟수)</label>
+        <input id="in-total" type="number" inputmode="numeric" placeholder="20">
+      </div>
+      <div class="field">
+        <label>수업료 (내가 회당 가져가는 금액, 원)</label>
+        <input id="in-fee" type="number" inputmode="numeric" placeholder="40000">
+        <div class="hint">비워두면 총 금액 ÷ 총 세션으로 자동 계산돼요</div>
+      </div>
+      <button class="btn-primary" onclick="addMember()">회원 등록</button>
+      <div class="msg" id="form-msg"></div>
+    </div>
+
+    <input class="search-input" id="search-input" type="text" placeholder="이름으로 검색" oninput="render()">
+    <div class="members" id="members"></div>
+    <div class="empty" id="empty" style="display:none;">아직 등록된 회원이 없어요. 위 양식으로 첫 회원을 등록해보세요.</div>
+  </div>
+
+  <div id="view-stats" style="display:none;"></div>
+  <div id="view-schedule" style="display:none;">
+    <div id="schedule-content"></div>
+  </div>
+  <div id="view-programs" style="display:none;">
+    <div id="programs-content"></div>
+  </div>
+  <div id="view-coaching" style="display:none;">
+    <input class="search-input" id="search-input-coaching" type="text" placeholder="이름으로 검색" oninput="renderCoaching()">
+    <div id="coaching-list"></div>
+    <button class="fab" onclick="goToAddMember()">+ 회원 추가</button>
+  </div>
+</div>
+
+<script>
+let members = [];
+let expandedId = null;
+let expandedIdCoaching = null;
+let confirmingDeleteId = null;
+let pendingAttendId = null;
+let storageOK = true;
+let storageMode = null; // 'cloud' | 'claude' | 'local' | null
+let cloudConfig = null; // {binId, apiKey}
+let currentView = 'coaching';
+let menuOpen = false;
+let confirmingResetAll = false;
+let memberSubTab = {};
+let lastDeleted = null;
+let schedules = {};
+let programs = [];
+let expandedProgramId = null;
+let confirmingProgramDeleteId = null;
+let selectedSlot = null;
+let scheduleWeekOffset = 0;
+const HOURS = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23];
+const DAY_LABELS = ['월','화','수','목','금','토','일'];
+const KEY = 'pt-members';
+const CONFIG_KEY = 'pt-cloud-config';
+
+function switchView(view){
+  currentView = view;
+  menuOpen = false;
+  render();
+}
+
+function toggleMenu(){
+  menuOpen = !menuOpen;
+  render();
+}
+
+function goToAddMember(){
+  currentView = 'members';
+  menuOpen = false;
+  render();
+  window.scrollTo(0,0);
+  setTimeout(() => {
+    const nameInput = document.getElementById('in-name');
+    if(nameInput) nameInput.focus();
+  }, 50);
+}
+
+function showFormMsg(text, type){
+  const el = document.getElementById('form-msg');
+  el.textContent = text;
+  el.className = 'msg show ' + type;
+}
+function showImportMsg(text, type){
+  const el = document.getElementById('import-msg');
+  el.textContent = text;
+  el.className = 'msg show ' + type;
+}
+function showSettingsMsg(text, type){
+  const el = document.getElementById('settings-msg');
+  el.textContent = text;
+  el.className = 'msg show ' + type;
+}
+
+function loadCloudConfig(){
+  try{
+    const raw = localStorage.getItem(CONFIG_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+
+function toggleSettings(){
+  const panel = document.getElementById('settings-panel');
+  const open = panel.style.display !== 'none';
+  panel.style.display = open ? 'none' : 'block';
+  if(!open && cloudConfig){
+    document.getElementById('in-binid').value = cloudConfig.binId;
+    document.getElementById('in-apikey').value = cloudConfig.apiKey;
+  }
+}
+
+async function saveCloudConfig(){
+  const binId = document.getElementById('in-binid').value.trim();
+  const apiKey = document.getElementById('in-apikey').value.trim();
+  if(!binId || !apiKey){
+    showSettingsMsg('Bin ID와 Master Key를 모두 입력해주세요.', 'error');
+    return;
+  }
+  cloudConfig = { binId, apiKey };
+  try{
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(cloudConfig));
+  }catch(e){}
+
+  showSettingsMsg('연결 확인 중...', 'info');
+  const ok = await cloudPull();
+  if(ok){
+    showSettingsMsg('연결됐어요! 이 데이터가 이제 두 기기 모두에 공유돼요.', 'info');
+    storageMode = 'cloud';
+    storageOK = true;
+    render();
+  }else{
+    showSettingsMsg('연결에 실패했어요. Bin ID / Master Key를 다시 확인해주세요.', 'error');
+  }
+}
+
+function normalizeMember(m){
+  if(!Array.isArray(m.inbody)) m.inbody = [];
+  if(!Array.isArray(m.workouts)) m.workouts = [];
+  if(!Array.isArray(m.tasks)) m.tasks = [];
+  if(!Array.isArray(m.diets)) m.diets = [];
+  if(!Array.isArray(m.programs)) m.programs = [];
+  if(typeof m.goal !== 'string') m.goal = '';
+  if(typeof m.experience !== 'string') m.experience = '';
+  if(typeof m.contact !== 'string') m.contact = '';
+  if(typeof m.startDate !== 'string') m.startDate = '';
+  if(typeof m.status !== 'string') m.status = '진행중';
+  if(typeof m.restrictions !== 'string') m.restrictions = '';
+
+  // 예전 방식(식단·숙제가 하나의 tasks 배열에 종류만 다르게 저장되던 시절) 자동 분리
+  if(!m._migratedDiets){
+    const oldDiets = m.tasks.filter(t => t.type === '식단');
+    if(oldDiets.length > 0){
+      oldDiets.forEach(t => {
+        m.diets.push({
+          id: t.id,
+          date: t.date,
+          mealType: '',
+          content: t.content,
+          photo: null,
+          calories: null,
+          carbs: null,
+          protein: null,
+          fat: null,
+          condition: '',
+          reviewed: !!t.done,
+          feedback: ''
+        });
+      });
+      m.tasks = m.tasks.filter(t => t.type !== '식단');
+    }
+    m._migratedDiets = true;
+  }
+  // 남은 tasks(숙제)에 새 필드 기본값 보강
+  m.tasks.forEach(t => {
+    if(typeof t.deadline !== 'string') t.deadline = '';
+    if(typeof t.feedback !== 'string') t.feedback = '';
+  });
+
+  return m;
+}
+function normalizeAll(){
+  members.forEach(normalizeMember);
+  if(!schedules || typeof schedules !== 'object') schedules = {};
+}
+
+function serializeState(){
+  return JSON.stringify({ members, schedules, programs });
+}
+function applyState(raw){
+  if(!raw){ members = []; schedules = {}; programs = []; return; }
+  let data;
+  try{ data = JSON.parse(raw); }catch(e){ members = []; schedules = {}; programs = []; return; }
+  if(Array.isArray(data)){
+    // 예전 형식(배열만 저장했던 백업/데이터) 호환
+    members = data;
+    schedules = schedules || {};
+    programs = programs || [];
+  }else if(data && typeof data === 'object'){
+    members = Array.isArray(data.members) ? data.members : [];
+    schedules = data.schedules && typeof data.schedules === 'object' ? data.schedules : {};
+    programs = Array.isArray(data.programs) ? data.programs : [];
+  }else{
+    members = []; schedules = {}; programs = [];
+  }
+  normalizeAll();
+}
+
+async function cloudPull(){
+  if(!cloudConfig) return false;
+  try{
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${cloudConfig.binId}/latest`, {
+      headers: { 'X-Master-Key': cloudConfig.apiKey }
+    });
+    if(!res.ok) return false;
+    const data = await res.json();
+    const record = data.record;
+    if(Array.isArray(record)){
+      members = record;
+      schedules = schedules || {};
+      programs = programs || [];
+    }else if(record && typeof record === 'object'){
+      members = Array.isArray(record.members) ? record.members : [];
+      schedules = record.schedules && typeof record.schedules === 'object' ? record.schedules : {};
+      programs = Array.isArray(record.programs) ? record.programs : [];
+    }else{
+      members = []; schedules = {}; programs = [];
+    }
+    normalizeAll();
+    storageMode = 'cloud';
+    storageOK = true;
+    try{ localStorage.setItem(KEY, serializeState()); }catch(e){}
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+async function cloudPush(){
+  if(!cloudConfig) return false;
+  try{
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${cloudConfig.binId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': cloudConfig.apiKey
+      },
+      body: serializeState()
+    });
+    return res.ok;
+  }catch(e){
+    return false;
+  }
+}
+
+async function manualSync(){
+  if(!cloudConfig){
+    toggleSettings();
+    return;
+  }
+  const ok = await cloudPull();
+  storageOK = ok;
+  render();
+}
+
+async function load(){
+  cloudConfig = loadCloudConfig();
+
+  // 1) 동기화가 설정돼 있으면 클라우드에서 먼저 불러오기
+  if(cloudConfig){
+    const ok = await cloudPull();
+    if(ok){ render(); return; }
+  }
+
+  // 2) Claude 미리보기 안에서는 window.storage 사용
+  try{
+    if(window.storage){
+      const res = await window.storage.get(KEY);
+      applyState(res && res.value ? res.value : null);
+      storageMode = 'claude';
+      storageOK = true;
+      render();
+      return;
+    }
+  }catch(e){ /* 다음 방식으로 시도 */ }
+
+  // 3) 그 외에는 이 기기의 localStorage 사용
+  try{
+    const raw = localStorage.getItem(KEY);
+    applyState(raw);
+    storageMode = 'local';
+    storageOK = true;
+  }catch(e){
+    members = [];
+    schedules = {};
+    storageMode = null;
+    storageOK = false;
+  }
+  render();
+}
+
+async function save(){
+  if(storageMode === 'cloud' && cloudConfig){
+    const ok = await cloudPush();
+    try{ localStorage.setItem(KEY, serializeState()); }catch(e){}
+    storageOK = ok;
+    render();
+    return;
+  }
+  if(storageMode === 'claude'){
+    try{
+      await window.storage.set(KEY, serializeState());
+      return;
+    }catch(e){ /* 아래 localStorage로 대체 시도 */ }
+  }
+  try{
+    localStorage.setItem(KEY, serializeState());
+    storageMode = 'local';
+    storageOK = true;
+  }catch(e){
+    storageOK = false;
+  }
+  render();
+}
+
+function addMember(){
+  const name = document.getElementById('in-name').value.trim();
+  const amount = parseFloat(document.getElementById('in-amount').value);
+  const total = parseInt(document.getElementById('in-total').value);
+  const feeInput = document.getElementById('in-fee').value;
+
+  if(!name || !amount || amount <= 0 || !total || total <= 0){
+    showFormMsg('이름, 총 금액, 총 세션은 필수 입력값이에요.', 'error');
+    return;
+  }
+
+  const fee = feeInput ? parseFloat(feeInput) : Math.round(amount / total);
+
+  members.push({
+    id: Date.now().toString(),
+    name,
+    totalAmount: amount,
+    totalSessions: total,
+    usedSessions: 0,
+    monthlyUsed: 0,
+    sessionFee: fee,
+    inbody: [],
+    workouts: [],
+    tasks: [],
+    diets: [],
+    programs: [],
+    goal: '',
+    experience: '',
+    contact: '',
+    startDate: today(),
+    status: '진행중',
+    restrictions: ''
+  });
+
+  document.getElementById('in-name').value = '';
+  document.getElementById('in-amount').value = '';
+  document.getElementById('in-total').value = '';
+  document.getElementById('in-fee').value = '';
+  showFormMsg(`${name}님이 등록됐어요. 잠시 후 코칭 화면으로 돌아가요.`, 'info');
+
+  save();
+  render();
+
+  setTimeout(() => {
+    if(currentView === 'members'){
+      switchView('coaching');
+    }
+  }, 1200);
+}
+
+function askAttend(id){
+  pendingAttendId = id;
+  render();
+}
+function cancelAttend(){
+  pendingAttendId = null;
+  render();
+}
+function attend(id){
+  const m = members.find(x => x.id === id);
+  if(!m || m.usedSessions >= m.totalSessions){ pendingAttendId = null; return; }
+  m.usedSessions += 1;
+  m.monthlyUsed += 1;
+  pendingAttendId = null;
+  save();
+  render();
+}
+
+function undoAttend(id){
+  const m = members.find(x => x.id === id);
+  if(!m || m.usedSessions <= 0) return;
+  m.usedSessions -= 1;
+  if(m.monthlyUsed > 0) m.monthlyUsed -= 1;
+  save();
+  render();
+}
+
+function resetMonthly(id){
+  const m = members.find(x => x.id === id);
+  if(!m) return;
+  m.monthlyUsed = 0;
+  save();
+  render();
+}
+
+function toggleExpand(id){
+  expandedId = expandedId === id ? null : id;
+  confirmingDeleteId = null;
+  render();
+}
+
+function toggleCoachingExpand(id){
+  expandedIdCoaching = expandedIdCoaching === id ? null : id;
+  render();
+}
+
+function askRemove(id){
+  confirmingDeleteId = id;
+  render();
+}
+function cancelRemove(){
+  confirmingDeleteId = null;
+  render();
+}
+function removeMember(id){
+  members = members.filter(x => x.id !== id);
+  confirmingDeleteId = null;
+  expandedId = null;
+  save();
+  render();
+}
+
+function exportData(){
+  const blob = new Blob([JSON.stringify({ members, schedules, programs }, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStr = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `pt-members-backup-${dateStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showImportMsg('백업 파일이 저장됐어요.', 'info');
+}
+
+let pendingImportData = null;
+let pendingImportSchedules = null;
+let pendingImportPrograms = null;
+
+function handleImportFile(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try{
+      const data = JSON.parse(e.target.result);
+      let importedMembers, importedSchedules, importedPrograms;
+      if(Array.isArray(data)){
+        importedMembers = data;
+        importedSchedules = {};
+        importedPrograms = [];
+      }else if(data && typeof data === 'object' && Array.isArray(data.members)){
+        importedMembers = data.members;
+        importedSchedules = data.schedules && typeof data.schedules === 'object' ? data.schedules : {};
+        importedPrograms = Array.isArray(data.programs) ? data.programs : [];
+      }else{
+        throw new Error('형식 오류');
+      }
+      pendingImportData = importedMembers;
+      pendingImportSchedules = importedSchedules;
+      pendingImportPrograms = importedPrograms;
+      renderImportConfirm();
+    }catch(err){
+      showImportMsg('올바른 백업 파일이 아니에요.', 'error');
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function renderImportConfirm(){
+  const el = document.getElementById('import-msg');
+  el.innerHTML = `백업 파일에서 회원 ${pendingImportData.length}명을 찾았어요. 지금 불러오면 현재 목록(시간표·프로그램 포함)을 덮어써요.
+    <div style="margin-top:8px;display:flex;gap:8px;">
+      <button class="pill-btn danger" onclick="confirmImport()">덮어쓰기</button>
+      <button class="pill-btn" onclick="cancelImport()">취소</button>
+    </div>`;
+  el.className = 'msg show error';
+}
+
+function confirmImport(){
+  members = pendingImportData;
+  schedules = pendingImportSchedules || {};
+  programs = pendingImportPrograms || [];
+  normalizeAll();
+  pendingImportData = null;
+  pendingImportSchedules = null;
+  pendingImportPrograms = null;
+  save();
+  render();
+  showImportMsg('백업을 불러왔어요.', 'info');
+}
+function cancelImport(){
+  pendingImportData = null;
+  pendingImportSchedules = null;
+  pendingImportPrograms = null;
+  showImportMsg('', '');
+  document.getElementById('import-msg').className = 'msg';
+}
+
+function fmt(n){
+  return Math.round(n).toLocaleString('ko-KR');
+}
+
+function today(){
+  return new Date().toISOString().slice(0,10);
+}
+
+function fmtDate(d){
+  const [y,m,day] = d.split('-');
+  return `${y}.${m}.${day}`;
+}
+
+function setMemberTab(id, tab){
+  memberSubTab[id] = tab;
+  render();
+}
+
+function findMember(id){
+  return members.find(x => x.id === id);
+}
+
+// ---------- 인바디 ----------
+function addInbody(id){
+  const m = findMember(id);
+  if(!m) return;
+  const date = document.getElementById(`inbody-date-${id}`).value || today();
+  const weight = document.getElementById(`inbody-weight-${id}`).value;
+  const muscle = document.getElementById(`inbody-muscle-${id}`).value;
+  const fat = document.getElementById(`inbody-fat-${id}`).value;
+  const fatPercent = document.getElementById(`inbody-fatpercent-${id}`).value;
+  const score = document.getElementById(`inbody-score-${id}`).value;
+
+  if(!weight && !muscle && !fat && !fatPercent && !score){
+    return;
+  }
+
+  m.inbody.push({
+    id: Date.now().toString(),
+    date,
+    weight: weight ? parseFloat(weight) : null,
+    muscle: muscle ? parseFloat(muscle) : null,
+    fat: fat ? parseFloat(fat) : null,
+    fatPercent: fatPercent ? parseFloat(fatPercent) : null,
+    score: score ? parseFloat(score) : null
+  });
+
+  save();
+  render();
+}
+function deleteRecord(memberId, listName, recordId){
+  const m = findMember(memberId);
+  if(!m) return;
+  const idx = m[listName].findIndex(r => r.id === recordId);
+  if(idx === -1) return;
+  lastDeleted = { memberId, listName, record: m[listName][idx], index: idx };
+  m[listName].splice(idx, 1);
+  save();
+  render();
+}
+function undoDelete(){
+  if(!lastDeleted) return;
+  const m = findMember(lastDeleted.memberId);
+  if(m){
+    m[lastDeleted.listName].splice(lastDeleted.index, 0, lastDeleted.record);
+    save();
+  }
+  lastDeleted = null;
+  render();
+}
+
+// ---------- 수업일지 ----------
+function addWorkout(id){
+  const m = findMember(id);
+  if(!m) return;
+  const date = document.getElementById(`workout-date-${id}`).value || today();
+  const content = document.getElementById(`workout-content-${id}`).value.trim();
+  const bodyPart = document.getElementById(`workout-bodypart-${id}`).value.trim();
+  const rating = document.getElementById(`workout-rating-${id}`).value;
+  const nextPlan = document.getElementById(`workout-nextplan-${id}`).value.trim();
+  if(!content) return;
+  m.workouts.push({ id: Date.now().toString(), date, content, bodyPart, rating, nextPlan });
+  document.getElementById(`workout-content-${id}`).value = '';
+  document.getElementById(`workout-bodypart-${id}`).value = '';
+  document.getElementById(`workout-rating-${id}`).value = '';
+  document.getElementById(`workout-nextplan-${id}`).value = '';
+  save();
+  render();
+}
+
+// ---------- 식단 / 숙제 ----------
+function addTask(id){
+  const m = findMember(id);
+  if(!m) return;
+  const date = document.getElementById(`task-date-${id}`).value || today();
+  const deadline = document.getElementById(`task-deadline-${id}`).value;
+  const content = document.getElementById(`task-content-${id}`).value.trim();
+  if(!content) return;
+  m.tasks.push({ id: Date.now().toString(), date, deadline, content, done: false, feedback: '', memberNote: '' });
+  document.getElementById(`task-content-${id}`).value = '';
+  document.getElementById(`task-deadline-${id}`).value = '';
+  save();
+  render();
+}
+function toggleTaskDone(memberId, recordId){
+  const m = findMember(memberId);
+  if(!m) return;
+  const t = m.tasks.find(r => r.id === recordId);
+  if(!t) return;
+  t.done = !t.done;
+  save();
+  render();
+}
+function saveTaskFeedback(memberId, recordId){
+  const m = findMember(memberId);
+  if(!m) return;
+  const t = m.tasks.find(r => r.id === recordId);
+  if(!t) return;
+  t.feedback = document.getElementById(`task-feedback-${recordId}`).value.trim();
+  t.memberNote = document.getElementById(`task-membernote-${recordId}`).value.trim();
+  save();
+  render();
+}
+
+// ---------- 식단 ----------
+function resizeImageFile(file, maxSize, quality){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if(w > h && w > maxSize){ h = Math.round(h * maxSize / w); w = maxSize; }
+        else if(h > maxSize){ w = Math.round(w * maxSize / h); h = maxSize; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+let pendingDietPhoto = null;
+function handleDietPhotoSelect(id, event){
+  const file = event.target.files[0];
+  if(!file) return;
+  resizeImageFile(file, 480, 0.6).then(dataUrl => {
+    pendingDietPhoto = dataUrl;
+    const preview = document.getElementById(`diet-photo-preview-${id}`);
+    if(preview){ preview.src = dataUrl; preview.style.display = 'block'; }
+  }).catch(() => {});
+}
+
+function addDiet(id){
+  const m = findMember(id);
+  if(!m) return;
+  const date = document.getElementById(`diet-date-${id}`).value || today();
+  const mealType = document.getElementById(`diet-mealtype-${id}`).value;
+  const content = document.getElementById(`diet-content-${id}`).value.trim();
+  const calories = document.getElementById(`diet-calories-${id}`).value;
+  const carbs = document.getElementById(`diet-carbs-${id}`).value;
+  const protein = document.getElementById(`diet-protein-${id}`).value;
+  const fat = document.getElementById(`diet-fat-${id}`).value;
+  const condition = document.getElementById(`diet-condition-${id}`).value;
+  if(!content) return;
+
+  m.diets.push({
+    id: Date.now().toString(),
+    date,
+    mealType,
+    content,
+    calories: calories ? parseFloat(calories) : null,
+    carbs: carbs ? parseFloat(carbs) : null,
+    protein: protein ? parseFloat(protein) : null,
+    fat: fat ? parseFloat(fat) : null,
+    condition,
+    photo: pendingDietPhoto,
+    reviewed: false,
+    feedback: ''
+  });
+
+  pendingDietPhoto = null;
+  document.getElementById(`diet-content-${id}`).value = '';
+  document.getElementById(`diet-calories-${id}`).value = '';
+  document.getElementById(`diet-carbs-${id}`).value = '';
+  document.getElementById(`diet-protein-${id}`).value = '';
+  document.getElementById(`diet-fat-${id}`).value = '';
+  document.getElementById(`diet-photo-${id}`).value = '';
+  const preview = document.getElementById(`diet-photo-preview-${id}`);
+  if(preview){ preview.style.display = 'none'; preview.src = ''; }
+
+  save();
+  render();
+}
+function toggleDietReviewed(memberId, recordId){
+  const m = findMember(memberId);
+  if(!m) return;
+  const d = m.diets.find(r => r.id === recordId);
+  if(!d) return;
+  d.reviewed = !d.reviewed;
+  save();
+  render();
+}
+function saveDietFeedback(memberId, recordId){
+  const m = findMember(memberId);
+  if(!m) return;
+  const d = m.diets.find(r => r.id === recordId);
+  if(!d) return;
+  d.feedback = document.getElementById(`diet-feedback-${recordId}`).value.trim();
+  save();
+  render();
+}
+
+// ---------- 상세 탭 렌더링 ----------
+function buildMoneyDetailHTML(m, remaining, unitPrice, totalFee, percent){
+  return buildInfoTab(m, remaining, unitPrice, totalFee, percent);
+}
+
+function buildCoachingDetailHTML(m){
+  let tab = memberSubTab[m.id] || 'inbody';
+  if(tab === 'info') tab = 'inbody';
+  const tabs = [
+    ['inbody','인바디'], ['workout','수업일지'], ['diet','식단'], ['task','숙제'], ['profile','프로필']
+  ];
+  const nav = `<div class="subtab-nav">${tabs.map(([key,label]) =>
+    `<button class="subtab-btn ${tab===key?'active':''}" onclick="setMemberTab('${m.id}','${key}')">${label}</button>`
+  ).join('')}</div>`;
+
+  const restrictionBanner = m.restrictions
+    ? `<div class="restriction-banner">⚠️ ${m.restrictions}</div>`
+    : '';
+
+  const undoBar = (lastDeleted && lastDeleted.memberId === m.id)
+    ? `<div class="undo-toast"><span>삭제됐어요</span><button class="pill-btn" onclick="undoDelete()">되돌리기</button></div>`
+    : '';
+
+  let body = '';
+  if(tab === 'inbody') body = buildInbodyTab(m);
+  else if(tab === 'workout') body = buildWorkoutTab(m);
+  else if(tab === 'diet') body = buildDietsTab(m);
+  else if(tab === 'task') body = buildTaskTab(m);
+  else if(tab === 'profile') body = buildProfileTab(m);
+
+  return restrictionBanner + nav + undoBar + body;
+}
+
+function saveProfile(id){
+  const m = findMember(id);
+  if(!m) return;
+  m.goal = document.getElementById(`profile-goal-${id}`).value.trim();
+  m.experience = document.getElementById(`profile-experience-${id}`).value;
+  m.contact = document.getElementById(`profile-contact-${id}`).value.trim();
+  m.startDate = document.getElementById(`profile-startdate-${id}`).value;
+  m.status = document.getElementById(`profile-status-${id}`).value;
+  m.restrictions = document.getElementById(`profile-restrictions-${id}`).value.trim();
+  save();
+  render();
+}
+
+function buildProfileTab(m){
+  const expOptions = ['초급','중급','고급'].map(v =>
+    `<option value="${v}" ${m.experience===v?'selected':''}>${v}</option>`
+  ).join('');
+  const statusOptions = ['진행중','일시정지','종료'].map(v =>
+    `<option value="${v}" ${m.status===v?'selected':''}>${v}</option>`
+  ).join('');
+
+  const myPrograms = programs.filter(p => p.memberIds.includes(m.id));
+  const programBlock = myPrograms.length > 0 ? `
+    <div class="record-form" style="margin-bottom:14px;">
+      <label>참여 중인 프로그램</label>
+      <div class="record-list" style="margin-top:8px;">
+        ${myPrograms.map(p => `
+          <div class="record-item">
+            <div class="record-text" style="font-weight:700;">${p.name}</div>
+            <div class="record-date">${p.difficulty || ''} · ${p.durationWeeks ? p.durationWeeks + '주' : ''} · ${p.status}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  return `
+    ${programBlock}
+    <div class="record-form">
+      <div class="record-form-grid">
+        <div><label>목표</label><input type="text" id="profile-goal-${m.id}" value="${m.goal}" placeholder="체중감량, 근력증가 등"></div>
+        <div><label>운동경험</label>
+          <select id="profile-experience-${m.id}">
+            <option value="">선택 안 함</option>
+            ${expOptions}
+          </select>
+        </div>
+        <div><label>연락처</label><input type="tel" id="profile-contact-${m.id}" value="${m.contact}" placeholder="010-0000-0000"></div>
+        <div><label>시작일</label><input type="date" id="profile-startdate-${m.id}" value="${m.startDate}"></div>
+        <div style="grid-column:1/-1;"><label>상태</label>
+          <select id="profile-status-${m.id}">
+            ${statusOptions}
+          </select>
+        </div>
+      </div>
+      <label>주요 제한사항 · 부상 이력</label>
+      <textarea id="profile-restrictions-${m.id}" placeholder="예) 왼쪽 무릎 통증, 스쿼트 시 깊이 제한">${m.restrictions}</textarea>
+      <div style="height:8px;"></div>
+      <button class="pill-btn mint-btn" style="color:var(--mint);width:100%;" onclick="saveProfile('${m.id}')">저장</button>
+    </div>
+  `;
+}
+
+function buildInfoTab(m, remaining, unitPrice, totalFee, percent){
+  return `
+    <div class="stat-grid">
+      <div class="stat"><label>총 결제 금액</label><div class="val">${fmt(m.totalAmount)}원</div></div>
+      <div class="stat"><label>총 세션</label><div class="val">${m.totalSessions}회</div></div>
+      <div class="stat"><label>수업료 (회당 내 수입)</label><div class="val">${fmt(m.sessionFee)}원</div></div>
+      <div class="stat"><label>총 수업료</label><div class="val">${fmt(totalFee)}원</div></div>
+      <div class="stat"><label>단가 (전체 평균)</label><div class="val">${fmt(unitPrice)}원</div></div>
+      <div class="stat"><label>진행률</label><div class="val">${percent}%</div></div>
+    </div>
+    <div class="action-row">
+      <button class="pill-btn" onclick="undoAttend('${m.id}')">되돌리기 −1</button>
+      <button class="pill-btn" onclick="resetMonthly('${m.id}')">월 초기화</button>
+      ${confirmingDeleteId === m.id
+        ? `<span class="confirm-row">정말 삭제할까요?
+             <button class="pill-btn danger" onclick="removeMember('${m.id}')">삭제 확정</button>
+             <button class="pill-btn" onclick="cancelRemove()">취소</button>
+           </span>`
+        : `<button class="pill-btn danger" onclick="askRemove('${m.id}')">회원 삭제</button>`
+      }
+    </div>
+  `;
+}
+
+function deltaSpan(curr, prev, unit, lowerIsBetter){
+  if(curr === null || curr === undefined) return '';
+  if(prev === null || prev === undefined) return '';
+  const diff = +(curr - prev).toFixed(1);
+  if(diff === 0) return `<span class="delta-flat"> (변화 없음)</span>`;
+  const bad = lowerIsBetter ? diff > 0 : diff < 0;
+  const cls = bad ? 'delta-up' : 'delta-down';
+  const arrow = diff > 0 ? '▲' : '▼';
+  return `<span class="${cls}"> ${arrow}${Math.abs(diff)}${unit}</span>`;
+}
+
+function fmtDateShort(d){
+  const parts = d.split('-');
+  return `${parts[1]}.${parts[2]}`;
+}
+
+function buildLineChart(points, opts){
+  // points: [{date, value}] (오름차순), opts: {color, unit}
+  if(points.length < 2) return null;
+
+  const recent = points.slice(-12); // 최근 12개만 표시
+  const w = 300, h = 120, padX = 22, padY = 18;
+  const values = recent.map(p => p.value);
+  let min = Math.min(...values), max = Math.max(...values);
+  if(min === max){ min -= 1; max += 1; }
+  const rangeY = max - min;
+  const stepX = recent.length > 1 ? (w - padX*2) / (recent.length - 1) : 0;
+
+  const coords = recent.map((p,i) => {
+    const x = padX + i*stepX;
+    const y = h - padY - ((p.value - min) / rangeY) * (h - padY*2);
+    return { x, y, value: p.value, date: p.date };
+  });
+
+  const pathD = coords.map((c,i) => (i===0?'M':'L') + c.x.toFixed(1) + ',' + c.y.toFixed(1)).join(' ');
+  const dots = coords.map(c => `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="3.2" fill="${opts.color}"/>`).join('');
+  const valueLabels = coords.map(c =>
+    `<text x="${c.x.toFixed(1)}" y="${(c.y-8).toFixed(1)}" font-size="9" fill="${opts.color}" text-anchor="middle" font-weight="700">${c.value}</text>`
+  ).join('');
+  const showEvery = coords.length > 6 ? Math.ceil(coords.length/6) : 1;
+  const dateLabels = coords.map((c,i) => {
+    if(i % showEvery !== 0 && i !== coords.length-1) return '';
+    return `<text x="${c.x.toFixed(1)}" y="${h-3}" font-size="8" fill="#8b93a3" text-anchor="middle">${fmtDateShort(c.date)}</text>`;
+  }).join('');
+
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;display:block;">
+    <path d="${pathD}" fill="none" stroke="${opts.color}" stroke-width="2"/>
+    ${dots}${valueLabels}${dateLabels}
+  </svg>`;
+}
+
+const INBODY_METRICS = [
+  { key:'weight', label:'몸무게', unit:'kg', color:'#5eead4' },
+  { key:'muscle', label:'골격근량', unit:'kg', color:'#7dd3fc' },
+  { key:'fat', label:'체지방량', unit:'kg', color:'#ef7e6a' },
+  { key:'fatPercent', label:'체지방률', unit:'%', color:'#f2b866' },
+  { key:'score', label:'인바디 점수', unit:'점', color:'#c4b5fd' }
+];
+
+function buildInbodyCharts(sortedAsc){
+  const blocks = INBODY_METRICS.map(cfg => {
+    const points = sortedAsc
+      .filter(e => e[cfg.key] !== null && e[cfg.key] !== undefined)
+      .map(e => ({ date: e.date, value: e[cfg.key] }));
+    const chart = buildLineChart(points, { color: cfg.color, unit: cfg.unit });
+    if(!chart) return '';
+    return `
+      <div class="chart-block">
+        <div class="chart-title">${cfg.label} <span style="color:var(--muted);font-weight:400;">(${cfg.unit})</span></div>
+        ${chart}
+      </div>
+    `;
+  }).join('');
+
+  if(!blocks.trim()) return '';
+  return `<div class="stat-block"><h3>변화 추이</h3>${blocks}</div>`;
+}
+
+function buildInbodyTab(m){
+  const sorted = [...m.inbody].sort((a,b) => a.date.localeCompare(b.date));
+  const listDesc = [...sorted].reverse();
+  const charts = buildInbodyCharts(sorted);
+
+  const form = `
+    <div class="record-form">
+      <div class="record-form-grid">
+        <div><label>날짜</label><input type="date" id="inbody-date-${m.id}" value="${today()}"></div>
+        <div><label>몸무게 (kg)</label><input type="number" step="0.1" id="inbody-weight-${m.id}" placeholder="65.0"></div>
+        <div><label>골격근량 (kg)</label><input type="number" step="0.1" id="inbody-muscle-${m.id}" placeholder="28.0"></div>
+        <div><label>체지방량 (kg)</label><input type="number" step="0.1" id="inbody-fat-${m.id}" placeholder="15.0"></div>
+        <div><label>체지방률 (%)</label><input type="number" step="0.1" id="inbody-fatpercent-${m.id}" placeholder="22.0"></div>
+        <div><label>인바디 점수</label><input type="number" step="1" id="inbody-score-${m.id}" placeholder="75"></div>
+      </div>
+      <button class="pill-btn mint-btn" style="color:var(--mint);width:100%;" onclick="addInbody('${m.id}')">기록 추가</button>
+    </div>
+  `;
+
+  if(sorted.length === 0){
+    return form + `<div class="empty-sub">아직 인바디 기록이 없어요.</div>`;
+  }
+  const items = listDesc.map(entry => {
+    const idx = sorted.findIndex(x => x.id === entry.id);
+    const prev = idx > 0 ? sorted[idx-1] : null;
+    const metric = (label, val, prevVal, unit, lowerIsBetter) => {
+      if(val === null || val === undefined) return '';
+      return `<div class="metric"><span class="mlabel">${label}</span><span class="mval">${val}${unit}${prev ? deltaSpan(val, prevVal, unit, lowerIsBetter) : ''}</span></div>`;
+    };
+    return `
+      <div class="record-item">
+        <div class="record-date">${fmtDate(entry.date)}</div>
+        <div class="record-metrics">
+          ${metric('몸무게', entry.weight, prev?.weight, 'kg', true)}
+          ${metric('골격근량', entry.muscle, prev?.muscle, 'kg', false)}
+          ${metric('체지방량', entry.fat, prev?.fat, 'kg', true)}
+          ${metric('체지방률', entry.fatPercent, prev?.fatPercent, '%', true)}
+          ${metric('인바디점수', entry.score, prev?.score, '점', false)}
+        </div>
+        <div class="record-actions">
+          <button class="pill-btn danger" onclick="deleteRecord('${m.id}','inbody','${entry.id}')">삭제</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  return charts + form + `<div class="record-list">${items}</div>`;
+}
+
+function buildWorkoutTab(m){
+  const sorted = [...m.workouts].sort((a,b) => b.date.localeCompare(a.date));
+
+  const form = `
+    <div class="record-form">
+      <div class="record-form-grid">
+        <div><label>날짜</label><input type="date" id="workout-date-${m.id}" value="${today()}"></div>
+        <div><label>운동부위</label><input type="text" id="workout-bodypart-${m.id}" placeholder="하체, 코어"></div>
+      </div>
+      <label>오늘 진행한 운동</label>
+      <textarea id="workout-content-${m.id}" placeholder="예) 스쿼트 3세트, 벤치프레스 3세트, 데드리프트 2세트"></textarea>
+      <div class="record-form-grid" style="margin-top:10px;">
+        <div><label>수행평가</label>
+          <select id="workout-rating-${m.id}">
+            <option value="">선택 안 함</option>
+            <option value="좋음">좋음</option>
+            <option value="보통">보통</option>
+            <option value="힘듦">힘듦</option>
+          </select>
+        </div>
+        <div><label>다음 수업 계획</label><input type="text" id="workout-nextplan-${m.id}" placeholder="다음엔 중량 늘리기"></div>
+      </div>
+      <div style="height:8px;"></div>
+      <button class="pill-btn mint-btn" style="color:var(--mint);width:100%;" onclick="addWorkout('${m.id}')">기록 추가</button>
+    </div>
+  `;
+
+  if(sorted.length === 0){
+    return form + `<div class="empty-sub">아직 수업일지가 없어요.</div>`;
+  }
+
+  const ratingColor = (r) => r==='좋음' ? 'var(--mint)' : (r==='힘듦' ? 'var(--coral)' : 'var(--muted)');
+
+  const items = sorted.map(entry => `
+    <div class="record-item">
+      <div class="record-date">${fmtDate(entry.date)}${entry.rating ? ` · <span style="color:${ratingColor(entry.rating)};font-weight:700;">${entry.rating}</span>` : ''}</div>
+      ${entry.bodyPart ? `<div class="badge">${entry.bodyPart}</div>` : ''}
+      <div class="record-text">${entry.content}</div>
+      ${entry.nextPlan ? `<div style="margin-top:6px;font-size:12px;color:var(--mint);">다음: ${entry.nextPlan}</div>` : ''}
+      <div class="record-actions">
+        <button class="pill-btn danger" onclick="deleteRecord('${m.id}','workouts','${entry.id}')">삭제</button>
+      </div>
+    </div>
+  `).join('');
+
+  return form + `<div class="record-list">${items}</div>`;
+}
+
+function buildTaskTab(m){
+  const sorted = [...m.tasks].sort((a,b) => b.date.localeCompare(a.date));
+
+  const form = `
+    <div class="record-form">
+      <div class="record-form-grid">
+        <div><label>부여일</label><input type="date" id="task-date-${m.id}" value="${today()}"></div>
+        <div><label>마감일</label><input type="date" id="task-deadline-${m.id}"></div>
+      </div>
+      <label>숙제 내용</label>
+      <textarea id="task-content-${m.id}" placeholder="예) 스쿼트 자세 영상 찍어오기"></textarea>
+      <div style="height:8px;"></div>
+      <button class="pill-btn mint-btn" style="color:var(--mint);width:100%;" onclick="addTask('${m.id}')">숙제 추가</button>
+    </div>
+  `;
+
+  if(sorted.length === 0){
+    return form + `<div class="empty-sub">아직 숙제 기록이 없어요.</div>`;
+  }
+
+  const items = sorted.map(entry => `
+    <div class="record-item">
+      <div class="record-date">부여일 ${fmtDate(entry.date)}${entry.deadline ? ` · 마감 ${fmtDate(entry.deadline)}` : ''}</div>
+      <div class="record-text">${entry.content}</div>
+      <details style="margin-top:8px;">
+        <summary style="font-size:12px;color:var(--muted);cursor:pointer;">피드백 · 회원 소감${(entry.feedback||entry.memberNote) ? ' ✓' : ''}</summary>
+        <div style="margin-top:8px;">
+          <label>트레이너 피드백</label>
+          <textarea id="task-feedback-${entry.id}" placeholder="완료 후 남길 피드백">${entry.feedback||''}</textarea>
+          <label style="margin-top:6px;">회원 소감</label>
+          <textarea id="task-membernote-${entry.id}" placeholder="회원이 전달한 소감">${entry.memberNote||''}</textarea>
+          <button class="pill-btn" style="margin-top:6px;" onclick="saveTaskFeedback('${m.id}','${entry.id}')">저장</button>
+        </div>
+      </details>
+      <div class="record-actions" style="margin-top:8px;">
+        <button class="pill-btn ${entry.done ? 'mint-btn' : ''}" style="${entry.done ? 'color:var(--mint);' : ''}" onclick="toggleTaskDone('${m.id}','${entry.id}')">${entry.done ? '✓ 완료' : '완료 표시'}</button>
+        <button class="pill-btn danger" onclick="deleteRecord('${m.id}','tasks','${entry.id}')">삭제</button>
+      </div>
+    </div>
+  `).join('');
+
+  return form + `<div class="record-list">${items}</div>`;
+}
+
+function buildDietsTab(m){
+  const sorted = [...m.diets].sort((a,b) => b.date.localeCompare(a.date));
+
+  const form = `
+    <div class="record-form">
+      <div class="record-form-grid">
+        <div><label>날짜</label><input type="date" id="diet-date-${m.id}" value="${today()}"></div>
+        <div><label>식사구분</label>
+          <select id="diet-mealtype-${m.id}">
+            <option value="아침">아침</option>
+            <option value="점심">점심</option>
+            <option value="저녁">저녁</option>
+            <option value="간식">간식</option>
+          </select>
+        </div>
+      </div>
+      <label>식단 내용</label>
+      <textarea id="diet-content-${m.id}" placeholder="예) 닭가슴살 150g, 현미밥 1공기, 브로콜리"></textarea>
+      <div class="record-form-grid" style="margin-top:10px;">
+        <div><label>총열량 (kcal)</label><input type="number" id="diet-calories-${m.id}" placeholder="500"></div>
+        <div><label>탄수화물 (g)</label><input type="number" id="diet-carbs-${m.id}" placeholder="50"></div>
+        <div><label>단백질 (g)</label><input type="number" id="diet-protein-${m.id}" placeholder="40"></div>
+        <div><label>지방 (g)</label><input type="number" id="diet-fat-${m.id}" placeholder="10"></div>
+      </div>
+      <label style="margin-top:6px;">컨디션</label>
+      <select id="diet-condition-${m.id}">
+        <option value="">선택 안 함</option>
+        <option value="좋음">좋음</option>
+        <option value="보통">보통</option>
+        <option value="힘듦">힘듦</option>
+      </select>
+      <label style="margin-top:6px;">사진 (선택)</label>
+      <input type="file" accept="image/*" id="diet-photo-${m.id}" onchange="handleDietPhotoSelect('${m.id}', event)">
+      <img id="diet-photo-preview-${m.id}" style="display:none;width:100%;border-radius:8px;margin-top:6px;">
+      <div style="height:8px;"></div>
+      <button class="pill-btn mint-btn" style="color:var(--mint);width:100%;" onclick="addDiet('${m.id}')">식단 기록 추가</button>
+    </div>
+  `;
+
+  if(sorted.length === 0){
+    return form + `<div class="empty-sub">아직 식단 기록이 없어요.</div>`;
+  }
+
+  const items = sorted.map(entry => `
+    <div class="record-item">
+      <div class="badge ${entry.reviewed ? 'done' : ''}">${entry.mealType || '식단'}${entry.reviewed ? ' · 확인함' : ' · 확인 필요'}</div>
+      <div class="record-date">${fmtDate(entry.date)}${entry.condition ? ` · 컨디션 ${entry.condition}` : ''}</div>
+      ${entry.photo ? `<img src="${entry.photo}" style="width:100%;border-radius:8px;margin:6px 0;">` : ''}
+      <div class="record-text">${entry.content}</div>
+      ${(entry.calories||entry.carbs||entry.protein||entry.fat) ? `
+        <div class="record-metrics" style="margin-top:6px;">
+          ${entry.calories ? `<div class="metric"><span class="mlabel">열량</span><span class="mval">${entry.calories}kcal</span></div>` : ''}
+          ${entry.carbs ? `<div class="metric"><span class="mlabel">탄수화물</span><span class="mval">${entry.carbs}g</span></div>` : ''}
+          ${entry.protein ? `<div class="metric"><span class="mlabel">단백질</span><span class="mval">${entry.protein}g</span></div>` : ''}
+          ${entry.fat ? `<div class="metric"><span class="mlabel">지방</span><span class="mval">${entry.fat}g</span></div>` : ''}
+        </div>
+      ` : ''}
+      <details style="margin-top:8px;">
+        <summary style="font-size:12px;color:var(--muted);cursor:pointer;">트레이너 피드백${entry.feedback ? ' ✓' : ''}</summary>
+        <div style="margin-top:8px;">
+          <textarea id="diet-feedback-${entry.id}" placeholder="이 식단에 대한 피드백">${entry.feedback||''}</textarea>
+          <button class="pill-btn" style="margin-top:6px;" onclick="saveDietFeedback('${m.id}','${entry.id}')">저장</button>
+        </div>
+      </details>
+      <div class="record-actions" style="margin-top:8px;">
+        <button class="pill-btn ${entry.reviewed ? 'mint-btn' : ''}" style="${entry.reviewed ? 'color:var(--mint);' : ''}" onclick="toggleDietReviewed('${m.id}','${entry.id}')">${entry.reviewed ? '확인 취소' : '확인 완료'}</button>
+        <button class="pill-btn danger" onclick="deleteRecord('${m.id}','diets','${entry.id}')">삭제</button>
+      </div>
+    </div>
+  `).join('');
+
+  return form + `<div class="record-list">${items}</div>`;
+}
+
+// ---------- 시간표 ----------
+function getMonday(dateStr){
+  const date = new Date(dateStr + 'T00:00:00');
+  const day = date.getDay(); // 0=일,1=월,...,6=토
+  const diff = (day === 0 ? -6 : 1 - day);
+  date.setDate(date.getDate() + diff);
+  return date.toISOString().slice(0,10);
+}
+function addDaysStr(dateStr, n){
+  const date = new Date(dateStr + 'T00:00:00');
+  date.setDate(date.getDate() + n);
+  return date.toISOString().slice(0,10);
+}
+function getWeekStartByOffset(offset){
+  const base = getMonday(today());
+  return addDaysStr(base, offset * 7);
+}
+function getWeekDates(weekStart){
+  const arr = [];
+  for(let i=0;i<7;i++) arr.push(addDaysStr(weekStart, i));
+  return arr;
+}
+function fmtDateWithDay(dateStr){
+  const d = new Date(dateStr + 'T00:00:00');
+  const days = ['일','월','화','수','목','금','토'];
+  return `${fmtDateShort(dateStr)}(${days[d.getDay()]})`;
+}
+
+function ensureWeek(weekKey){
+  if(!schedules[weekKey]) schedules[weekKey] = {};
+  return schedules[weekKey];
+}
+
+function selectSlot(date, hour){
+  if(selectedSlot && selectedSlot.date === date && selectedSlot.hour === hour){
+    selectedSlot = null;
+  }else{
+    selectedSlot = { date, hour };
+  }
+  render();
+}
+function clearSelectedSlot(){
+  selectedSlot = null;
+  render();
+}
+function changeWeek(delta){
+  scheduleWeekOffset += delta;
+  selectedSlot = null;
+  render();
+}
+function goToThisWeek(){
+  scheduleWeekOffset = 0;
+  selectedSlot = null;
+  render();
+}
+
+function assignSlot(weekKey, date, hour){
+  const select = document.getElementById('slot-member-select');
+  const memberId = select ? select.value : '';
+  if(!memberId) return;
+  const week = ensureWeek(weekKey);
+  week[`${date}_${hour}`] = { memberId, status: 'scheduled' };
+  selectedSlot = null;
+  save();
+  render();
+}
+
+function markSlotDone(weekKey, date, hour){
+  const week = ensureWeek(weekKey);
+  const key = `${date}_${hour}`;
+  const slot = week[key];
+  if(!slot || slot.status === 'done') return;
+  const m = findMember(slot.memberId);
+  if(m && m.usedSessions < m.totalSessions){
+    m.usedSessions += 1;
+    m.monthlyUsed += 1;
+  }
+  slot.status = 'done';
+  save();
+  render();
+}
+
+function markSlotCancelled(weekKey, date, hour){
+  const week = ensureWeek(weekKey);
+  const key = `${date}_${hour}`;
+  const slot = week[key];
+  if(!slot) return;
+  if(slot.status === 'done'){
+    const m = findMember(slot.memberId);
+    if(m && m.usedSessions > 0){
+      m.usedSessions -= 1;
+      if(m.monthlyUsed > 0) m.monthlyUsed -= 1;
+    }
+  }
+  slot.status = 'cancelled';
+  save();
+  render();
+}
+
+function removeSlot(weekKey, date, hour){
+  const week = ensureWeek(weekKey);
+  const key = `${date}_${hour}`;
+  const slot = week[key];
+  if(slot && slot.status === 'done'){
+    const m = findMember(slot.memberId);
+    if(m && m.usedSessions > 0){
+      m.usedSessions -= 1;
+      if(m.monthlyUsed > 0) m.monthlyUsed -= 1;
+    }
+  }
+  delete week[key];
+  selectedSlot = null;
+  save();
+  render();
+}
+
+function buildSlotPanel(weekKey){
+  if(!selectedSlot) return '';
+  const { date, hour } = selectedSlot;
+  const key = `${date}_${hour}`;
+  const week = schedules[weekKey] || {};
+  const slot = week[key];
+  const title = `${fmtDateWithDay(date)} ${hour}시`;
+
+  if(!slot){
+    if(members.length === 0){
+      return `
+        <div class="record-form" style="margin-top:14px;">
+          <div style="font-weight:800;margin-bottom:8px;">${title}</div>
+          <div class="empty-sub">먼저 회원을 등록해주세요.</div>
+        </div>
+      `;
+    }
+    const options = members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+    return `
+      <div class="record-form" style="margin-top:14px;">
+        <div style="font-weight:800;margin-bottom:8px;">${title}</div>
+        <label>회원 선택</label>
+        <select id="slot-member-select">
+          <option value="">회원을 선택하세요</option>
+          ${options}
+        </select>
+        <div style="height:8px;"></div>
+        <div class="action-row">
+          <button class="pill-btn mint-btn" style="color:var(--mint);" onclick="assignSlot('${weekKey}','${date}',${hour})">배정</button>
+          <button class="pill-btn" onclick="clearSelectedSlot()">닫기</button>
+        </div>
+      </div>
+    `;
+  }
+
+  const mem = findMember(slot.memberId);
+  const name = mem ? mem.name : '(삭제된 회원)';
+  const statusLabel = slot.status === 'done' ? '완료' : (slot.status === 'cancelled' ? '취소됨' : '예정');
+  const statusColor = slot.status === 'done' ? 'var(--mint)' : (slot.status === 'cancelled' ? 'var(--coral)' : 'var(--muted)');
+
+  return `
+    <div class="record-form" style="margin-top:14px;">
+      <div style="font-weight:800;margin-bottom:4px;">${title}</div>
+      <div style="font-size:14px;margin-bottom:2px;">${name}</div>
+      <div style="color:${statusColor};font-size:12px;font-weight:700;margin-bottom:10px;">${statusLabel}</div>
+      <div class="action-row">
+        ${slot.status === 'scheduled' ? `<button class="pill-btn mint-btn" style="color:var(--mint);" onclick="markSlotDone('${weekKey}','${date}',${hour})">완료 처리</button>` : ''}
+        ${slot.status !== 'cancelled' ? `<button class="pill-btn" onclick="markSlotCancelled('${weekKey}','${date}',${hour})">취소 처리</button>` : ''}
+        <button class="pill-btn danger" onclick="removeSlot('${weekKey}','${date}',${hour})">삭제</button>
+        <button class="pill-btn" onclick="clearSelectedSlot()">닫기</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderSchedule(){
+  const el = document.getElementById('schedule-content');
+  if(!el) return;
+
+  const weekStart = getWeekStartByOffset(scheduleWeekOffset);
+  const dates = getWeekDates(weekStart);
+  const weekData = schedules[weekStart] || {};
+  const rangeLabel = `${fmtDateShort(dates[0])} ~ ${fmtDateShort(dates[6])}`;
+  const isThisWeek = scheduleWeekOffset === 0;
+
+  let table = `<div class="sched-scroll"><table class="sched-table"><thead><tr><th class="sched-corner"></th>`;
+  DAY_LABELS.forEach((label, i) => {
+    const date = dates[i];
+    table += `<th class="sched-daylabel">${label}<br><span class="sched-date">${fmtDateShort(date)}</span></th>`;
+  });
+  table += `</tr></thead><tbody>`;
+
+  HOURS.forEach(h => {
+    table += `<tr><th class="sched-hourlabel">${h}시</th>`;
+    DAY_LABELS.forEach((label, i) => {
+      const date = dates[i];
+      const key = `${date}_${h}`;
+      const slot = weekData[key];
+      const isSelected = selectedSlot && selectedSlot.date === date && selectedSlot.hour === h;
+      let cls = 'sched-cell';
+      let content = '';
+      if(slot){
+        const mem = findMember(slot.memberId);
+        const name = mem ? mem.name : '?';
+        if(slot.status === 'done') cls += ' sched-done';
+        else if(slot.status === 'cancelled') cls += ' sched-cancelled';
+        else cls += ' sched-scheduled';
+        content = `<span class="sched-name">${name}</span>`;
+      }
+      if(isSelected) cls += ' sched-selected';
+      table += `<td class="${cls}" onclick="selectSlot('${date}',${h})">${content}</td>`;
+    });
+    table += `</tr>`;
+  });
+  table += `</tbody></table></div>`;
+
+  const panel = buildSlotPanel(weekStart);
+
+  el.innerHTML = `
+    <div class="sched-nav">
+      <button class="pill-btn" onclick="changeWeek(-1)">◀ 이전 주</button>
+      <div class="sched-range">${rangeLabel}${isThisWeek ? ' <span style="color:var(--mint);">· 이번 주</span>' : ''}</div>
+      <button class="pill-btn" onclick="changeWeek(1)">다음 주 ▶</button>
+    </div>
+    ${!isThisWeek ? `<button class="pill-btn" style="margin-bottom:14px;" onclick="goToThisWeek()">이번 주로 이동</button>` : ''}
+    <div class="sched-legend">
+      <span><i class="dot" style="background:var(--surface2);border:1px solid var(--line);"></i>예정</span>
+      <span><i class="dot" style="background:#1f3d38;border:1px solid var(--mint);"></i>완료</span>
+      <span><i class="dot" style="background:#3a2320;border:1px solid var(--coral);"></i>취소</span>
+    </div>
+    ${table}
+    ${panel}
+  `;
+}
+
+// ---------- 운동 프로그램 ----------
+function addProgram(){
+  const name = document.getElementById('program-name').value.trim();
+  if(!name) return;
+  const difficulty = document.getElementById('program-difficulty').value;
+  const weeks = document.getElementById('program-weeks').value;
+  const split = document.getElementById('program-split').value.trim();
+  const status = document.getElementById('program-status').value;
+
+  programs.push({
+    id: Date.now().toString(),
+    name,
+    difficulty,
+    durationWeeks: weeks ? parseInt(weeks) : null,
+    split,
+    status,
+    memberIds: []
+  });
+
+  document.getElementById('program-name').value = '';
+  document.getElementById('program-weeks').value = '';
+  document.getElementById('program-split').value = '';
+
+  save();
+  render();
+}
+
+function toggleProgramExpand(id){
+  expandedProgramId = expandedProgramId === id ? null : id;
+  confirmingProgramDeleteId = null;
+  render();
+}
+
+function saveProgramEdit(id){
+  const p = programs.find(x => x.id === id);
+  if(!p) return;
+  p.name = document.getElementById(`program-edit-name-${id}`).value.trim() || p.name;
+  p.difficulty = document.getElementById(`program-edit-difficulty-${id}`).value;
+  const weeks = document.getElementById(`program-edit-weeks-${id}`).value;
+  p.durationWeeks = weeks ? parseInt(weeks) : null;
+  p.split = document.getElementById(`program-edit-split-${id}`).value.trim();
+  p.status = document.getElementById(`program-edit-status-${id}`).value;
+  save();
+  render();
+}
+
+function toggleProgramMember(programId, memberId){
+  const p = programs.find(x => x.id === programId);
+  if(!p) return;
+  const idx = p.memberIds.indexOf(memberId);
+  if(idx === -1) p.memberIds.push(memberId);
+  else p.memberIds.splice(idx, 1);
+  save();
+  render();
+}
+
+function askRemoveProgram(id){
+  confirmingProgramDeleteId = id;
+  render();
+}
+function cancelRemoveProgram(){
+  confirmingProgramDeleteId = null;
+  render();
+}
+function removeProgram(id){
+  programs = programs.filter(p => p.id !== id);
+  confirmingProgramDeleteId = null;
+  expandedProgramId = null;
+  save();
+  render();
+}
+
+function renderPrograms(){
+  const el = document.getElementById('programs-content');
+  if(!el) return;
+
+  const form = `
+    <div class="record-form">
+      <h2 style="font-size:13px;color:var(--muted);margin:0 0 12px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;">새 프로그램 만들기</h2>
+      <div class="record-form-grid">
+        <div style="grid-column:1/-1;"><label>프로그램 이름</label><input type="text" id="program-name" placeholder="12주 체지방감량 프로그램"></div>
+        <div><label>난이도</label>
+          <select id="program-difficulty">
+            <option value="초급">초급</option>
+            <option value="중급">중급</option>
+            <option value="고급">고급</option>
+          </select>
+        </div>
+        <div><label>기간 (주)</label><input type="number" id="program-weeks" placeholder="12"></div>
+        <div style="grid-column:1/-1;"><label>분할 방식</label><input type="text" id="program-split" placeholder="전신, 상하체 분할 등"></div>
+        <div style="grid-column:1/-1;"><label>상태</label>
+          <select id="program-status">
+            <option value="계획중">계획중</option>
+            <option value="진행중">진행중</option>
+            <option value="완료">완료</option>
+          </select>
+        </div>
+      </div>
+      <button class="pill-btn mint-btn" style="color:var(--mint);width:100%;" onclick="addProgram()">프로그램 만들기</button>
+    </div>
+  `;
+
+  if(programs.length === 0){
+    el.innerHTML = form + `<div class="empty-sub">아직 등록된 프로그램이 없어요.</div>`;
+    return;
+  }
+
+  const cards = programs.map(p => {
+    const isOpen = expandedProgramId === p.id;
+    const memberNames = p.memberIds.map(id => findMember(id)).filter(Boolean).map(m => m.name);
+
+    let detail = '';
+    if(isOpen){
+      const diffOptions = ['초급','중급','고급'].map(v => `<option value="${v}" ${p.difficulty===v?'selected':''}>${v}</option>`).join('');
+      const statusOptions = ['계획중','진행중','완료'].map(v => `<option value="${v}" ${p.status===v?'selected':''}>${v}</option>`).join('');
+      const memberCheckboxes = members.length === 0
+        ? `<div class="empty-sub">등록된 회원이 없어요.</div>`
+        : members.map(m => `
+            <label class="checkbox-row">
+              <input type="checkbox" ${p.memberIds.includes(m.id)?'checked':''} onchange="toggleProgramMember('${p.id}','${m.id}')">
+              ${m.name}
+            </label>
+          `).join('');
+
+      detail = `
+        <div class="record-form" style="margin-top:12px;">
+          <div class="record-form-grid">
+            <div style="grid-column:1/-1;"><label>프로그램 이름</label><input type="text" id="program-edit-name-${p.id}" value="${p.name}"></div>
+            <div><label>난이도</label>
+              <select id="program-edit-difficulty-${p.id}">${diffOptions}</select>
+            </div>
+            <div><label>기간 (주)</label><input type="number" id="program-edit-weeks-${p.id}" value="${p.durationWeeks ?? ''}"></div>
+            <div style="grid-column:1/-1;"><label>분할 방식</label><input type="text" id="program-edit-split-${p.id}" value="${p.split||''}"></div>
+            <div style="grid-column:1/-1;"><label>상태</label>
+              <select id="program-edit-status-${p.id}">${statusOptions}</select>
+            </div>
+          </div>
+          <button class="pill-btn mint-btn" style="color:var(--mint);width:100%;" onclick="saveProgramEdit('${p.id}')">저장</button>
+        </div>
+        <div class="record-form" style="margin-top:12px;">
+          <label>참여 회원</label>
+          <div class="checkbox-list">${memberCheckboxes}</div>
+        </div>
+        <div class="action-row" style="margin-top:12px;">
+          ${confirmingProgramDeleteId === p.id
+            ? `<span class="confirm-row">정말 삭제할까요?
+                 <button class="pill-btn danger" onclick="removeProgram('${p.id}')">삭제 확정</button>
+                 <button class="pill-btn" onclick="cancelRemoveProgram()">취소</button>
+               </span>`
+            : `<button class="pill-btn danger" onclick="askRemoveProgram('${p.id}')">프로그램 삭제</button>`
+          }
+        </div>
+      `;
+    }
+
+    return `
+      <div class="member">
+        <div class="member-main">
+          <div class="member-info" onclick="toggleProgramExpand('${p.id}')" style="cursor:pointer;">
+            <div class="member-name">${p.name}</div>
+            <div class="member-sub">${p.difficulty || '난이도 미정'} · ${p.durationWeeks ? p.durationWeeks + '주' : '기간 미정'} · ${p.status}${memberNames.length ? ' · ' + memberNames.join(', ') : ''}</div>
+          </div>
+          <button class="expand-btn" onclick="toggleProgramExpand('${p.id}')">${isOpen ? '▲' : '▼'}</button>
+        </div>
+        <div class="member-detail ${isOpen?'open':''}">${detail}</div>
+      </div>
+    `;
+  }).join('');
+
+  el.innerHTML = form + `<div class="members">${cards}</div>`;
+}
+
+function render(){
+  document.getElementById('dropdown-menu').style.display = menuOpen ? 'flex' : 'none';
+  document.getElementById('menu-coaching').className = 'dropdown-item' + (currentView==='coaching' ? ' active' : '');
+  document.getElementById('menu-members').className = 'dropdown-item' + (currentView==='members' ? ' active' : '');
+  document.getElementById('menu-stats').className = 'dropdown-item' + (currentView==='stats' ? ' active' : '');
+  document.getElementById('menu-schedule').className = 'dropdown-item' + (currentView==='schedule' ? ' active' : '');
+  document.getElementById('menu-programs').className = 'dropdown-item' + (currentView==='programs' ? ' active' : '');
+  document.getElementById('view-members').style.display = currentView==='members' ? 'block' : 'none';
+  document.getElementById('view-coaching').style.display = currentView==='coaching' ? 'block' : 'none';
+  document.getElementById('view-stats').style.display = currentView==='stats' ? 'block' : 'none';
+  document.getElementById('view-schedule').style.display = currentView==='schedule' ? 'block' : 'none';
+  document.getElementById('view-programs').style.display = currentView==='programs' ? 'block' : 'none';
+  document.getElementById('summary').style.display = (currentView==='members'||currentView==='stats') ? 'flex' : 'none';
+  document.getElementById('storage-warn').style.display = (storageOK || (currentView!=='members' && currentView!=='stats')) ? 'none' : 'block';
+
+  const container = document.getElementById('members');
+  const empty = document.getElementById('empty');
+  container.innerHTML = '';
+
+  const searchEl = document.getElementById('search-input');
+  const query = searchEl ? searchEl.value.trim().toLowerCase() : '';
+  const visibleMembers = query ? members.filter(m => m.name.toLowerCase().includes(query)) : members;
+
+  empty.style.display = members.length === 0 ? 'block' : 'none';
+  if(members.length > 0 && visibleMembers.length === 0){
+    empty.style.display = 'block';
+    empty.textContent = '검색 결과가 없어요.';
+  }else{
+    empty.textContent = '아직 등록된 회원이 없어요. 위 양식으로 첫 회원을 등록해보세요.';
+  }
+
+  let totalRevenue = 0, totalRemaining = 0;
+
+  members.forEach(m => {
+    totalRevenue += m.totalAmount;
+    totalRemaining += (m.totalSessions - m.usedSessions);
+  });
+
+  visibleMembers.forEach(m => {
+    const remaining = m.totalSessions - m.usedSessions;
+    const unitPrice = m.totalAmount / m.totalSessions;
+    const totalFee = m.sessionFee * m.totalSessions;
+    const percent = ((m.usedSessions / m.totalSessions) * 100).toFixed(1);
+    const isOpen = expandedId === m.id;
+
+    const el = document.createElement('div');
+    el.className = 'member';
+
+    const isPendingAttend = pendingAttendId === m.id;
+
+    el.innerHTML = `
+      <div class="member-main">
+        <button class="check-btn ${remaining<=0?'done':''}" onclick="askAttend('${m.id}')" ${remaining<=0?'disabled':''}>
+          ✓
+        </button>
+        ${isPendingAttend ? `
+        <div class="member-info">
+          <div class="member-name">${m.name}님 출석 처리할까요?</div>
+          <div class="confirm-row" style="margin-top:8px;">
+            <button class="pill-btn mint-btn" onclick="attend('${m.id}')" style="color:var(--mint);">확인</button>
+            <button class="pill-btn" onclick="cancelAttend()">취소</button>
+          </div>
+        </div>
+        ` : `
+        <div class="member-info" onclick="toggleExpand('${m.id}')">
+          <div class="member-name">${m.name}</div>
+          <div class="member-sub">남은 <b>${remaining}</b>회 · 이번 달 <b>${m.monthlyUsed}</b>회 소진 · ${percent}%</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
+        </div>
+        `}
+        <button class="expand-btn" onclick="toggleExpand('${m.id}')">${isOpen ? '▲' : '▼'}</button>
+      </div>
+      <div class="member-detail ${isOpen?'open':''}">
+        ${isOpen ? buildMoneyDetailHTML(m, remaining, unitPrice, totalFee, percent) : ''}
+      </div>
+    `;
+    container.appendChild(el);
+  });
+
+  const syncLabel = storageMode === 'cloud'
+    ? (storageOK ? '☁️ 동기화됨' : '⚠️ 동기화 실패')
+    : (storageMode === 'claude' ? '💬 미리보기 저장' : '📱 이 기기에만 저장');
+  const syncClass = storageMode === 'cloud' ? (storageOK ? 'sync-ok' : 'sync-bad') : '';
+
+  document.getElementById('summary').innerHTML = `
+    <div class="chip"><span class="n">${members.length}명</span><span class="l">회원</span></div>
+    <div class="chip"><span class="n">${fmt(totalRevenue)}원</span><span class="l">총 매출</span></div>
+    <div class="chip"><span class="n">${totalRemaining}회</span><span class="l">남은 세션 합계</span></div>
+    <div class="chip ${syncClass}"><span class="n">${syncLabel}</span><span class="l">상태</span></div>
+  `;
+
+  const warnEl = document.getElementById('storage-warn');
+  if(warnEl && currentView !== 'coaching') warnEl.style.display = storageOK ? 'none' : 'block';
+
+  renderStats();
+  renderCoaching();
+  renderSchedule();
+  renderPrograms();
+}
+
+function renderCoaching(){
+  const el = document.getElementById('coaching-list');
+  if(!el) return;
+
+  if(members.length === 0){
+    el.innerHTML = `<div class="empty">회원을 등록하면 여기서 인바디·수업일지·식단/숙제를 기록할 수 있어요.</div>`;
+    return;
+  }
+
+  const searchEl = document.getElementById('search-input-coaching');
+  const query = searchEl ? searchEl.value.trim().toLowerCase() : '';
+  const list = query ? members.filter(m => m.name.toLowerCase().includes(query)) : members;
+
+  if(list.length === 0){
+    el.innerHTML = `<div class="empty">검색 결과가 없어요.</div>`;
+    return;
+  }
+
+  const rows = list.map(m => {
+    const isOpen = expandedIdCoaching === m.id;
+    return `
+      <div class="member">
+        <div class="member-main">
+          <div class="member-info" onclick="toggleCoachingExpand('${m.id}')" style="cursor:pointer;">
+            <div class="member-name">${m.name}</div>
+          </div>
+          <button class="expand-btn" onclick="toggleCoachingExpand('${m.id}')">${isOpen ? '▲' : '▼'}</button>
+        </div>
+        <div class="member-detail ${isOpen?'open':''}">
+          ${isOpen ? buildCoachingDetailHTML(m) : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  el.innerHTML = `<div class="members">${rows}</div>`;
+}
+
+function renderStats(){
+  const el = document.getElementById('view-stats');
+  if(!el) return;
+
+  if(members.length === 0){
+    el.innerHTML = `<div class="empty">회원을 등록하면 여기서 통계를 볼 수 있어요.</div>`;
+    return;
+  }
+
+  const rows = members.map(m => {
+    const remaining = m.totalSessions - m.usedSessions;
+    const unitPrice = m.totalAmount / m.totalSessions;
+    return {
+      ...m,
+      remaining,
+      unitPrice,
+      remainingValue: remaining * unitPrice,        // 남은 금액 (환불 기준)
+      remainingIncome: remaining * m.sessionFee,     // 앞으로 받을 수업료 (내 몫)
+      monthlyIncome: m.monthlyUsed * m.sessionFee    // 이번 달 실제 수입
+    };
+  });
+
+  const totalRemainingValue = rows.reduce((s, r) => s + r.remainingValue, 0);
+  const totalRemainingIncome = rows.reduce((s, r) => s + r.remainingIncome, 0);
+  const totalMonthlySessions = rows.reduce((s, r) => s + r.monthlyUsed, 0);
+  const totalMonthlyIncome = rows.reduce((s, r) => s + r.monthlyIncome, 0);
+
+  const lowMembers = rows.filter(r => r.remaining > 0 && r.remaining <= Math.max(2, Math.ceil(r.totalSessions*0.2)))
+                          .sort((a,b) => a.remaining - b.remaining);
+  const zeroMembers = rows.filter(r => r.remaining === 0);
+
+  const byValue = [...rows].sort((a,b) => b.remainingValue - a.remainingValue);
+
+  el.innerHTML = `
+    <div class="stat-block">
+      <h3>이번 달</h3>
+      <div class="rank-row">
+        <div><div class="rname">진행한 수업</div></div>
+        <div class="rval">${totalMonthlySessions}회</div>
+      </div>
+      <div class="rank-row">
+        <div><div class="rname">이번 달 수입 (내 몫)</div></div>
+        <div class="rval">${fmt(totalMonthlyIncome)}원</div>
+      </div>
+    </div>
+
+    <div class="stat-block">
+      <h3>전체 잔여</h3>
+      <div class="rank-row">
+        <div><div class="rname">남은 금액 합계</div><div class="rsub">환불 기준</div></div>
+        <div class="rval">${fmt(totalRemainingValue)}원</div>
+      </div>
+      <div class="rank-row">
+        <div><div class="rname">앞으로 받을 수업료 합계</div><div class="rsub">내 몫 기준</div></div>
+        <div class="rval">${fmt(totalRemainingIncome)}원</div>
+      </div>
+    </div>
+
+    ${(lowMembers.length > 0 || zeroMembers.length > 0) ? `
+    <div class="stat-block">
+      <h3>⚠️ 소진 임박 · 종료</h3>
+      ${lowMembers.map(r => `
+        <div class="rank-row alert-row">
+          <div><div class="rname">${r.name}</div><div class="rsub">남은 ${r.remaining}회</div></div>
+          <div class="rval">재등록 필요</div>
+        </div>
+      `).join('')}
+      ${zeroMembers.map(r => `
+        <div class="rank-row" style="color:var(--coral);">
+          <div><div class="rname">${r.name}</div><div class="rsub">전부 소진</div></div>
+          <div class="rval">종료</div>
+        </div>
+      `).join('')}
+    </div>
+    ` : ''}
+
+    <div class="stat-block">
+      <h3>회원별 남은 금액</h3>
+      ${byValue.map(r => `
+        <div class="rank-row">
+          <div><div class="rname">${r.name}</div><div class="rsub">남은 ${r.remaining}회 · 회당 ${fmt(r.unitPrice)}원</div></div>
+          <div class="rval">${fmt(r.remainingValue)}원</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="stat-block">
+      ${confirmingResetAll
+        ? `<div class="confirm-row">전체 회원의 이번 달 소진 수를 0으로 초기화할까요?
+             <button class="pill-btn danger" onclick="confirmResetAll()">초기화 확정</button>
+             <button class="pill-btn" onclick="confirmingResetAll=false;render();">취소</button>
+           </div>`
+        : `<button class="pill-btn" onclick="confirmingResetAll=true;render();">🔄 전체 회원 월 초기화</button>`
+      }
+    </div>
+  `;
+}
+
+function confirmResetAll(){
+  members.forEach(m => m.monthlyUsed = 0);
+  confirmingResetAll = false;
+  save();
+  render();
+}
+
+load();
+
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && cloudConfig){
+    cloudPull().then(() => render());
+  }
+});
+</script>
+</body>
+</html>
